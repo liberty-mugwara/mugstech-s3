@@ -1,14 +1,22 @@
 {
   "name": "mugstech-s3",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "version": "1.0.0",
   "description": "Uploads and Retrieves files to/from S3 in an AWS lambda",
-  "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc -p tsconfig.build.json --declaration"
+    "build": "tsc -p tsconfig.build.json --declaration",
+    "prepare": "npm run build",
+    "version": "git add -A src",
+    "postversion": "git push && git push --tags"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "s3",
+    "aws lambda",
+    "aws"
+  ],
+  "author": "Liberty Mugwara",
   "license": "ISC",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.188.0",
