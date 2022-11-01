@@ -44,6 +44,58 @@ export async function getS3Data<T>({
   }
 }
 
+export async function getS3JSONObject<T>({
+  bucket,
+  key,
+  region = "eu-central-1",
+}: {
+  bucket: string;
+  key: string;
+  region?: string;
+}) {
+  try {
+    const data: Buffer = await getS3Buffer({ bucket, key, region });
+
+    return JSON.parse(data.toString()) as T;
+  } catch (err) {
+    throw err;
+  }
+}
+
+export async function getS3Buffer({
+  bucket,
+  key,
+  region = "eu-central-1",
+}: {
+  bucket: string;
+  key: string;
+  region?: string;
+}) {
+  try {
+    // Create an Amazon S3 service client object.
+    const s3Client = new S3Client({ region });
+    let data: Buffer = Buffer.from("");
+
+    const { Body } = await s3Client.send(
+      new GetObjectCommand({
+        Bucket: bucket,
+        Key: key,
+      })
+    );
+
+    await pipeline<NodeJS.ReadableStream, NodeJS.WritableStream>(
+      Body as NodeJS.ReadableStream,
+      concat((d) => {
+        data = d;
+      })
+    );
+
+    return data;
+  } catch (err) {
+    throw err;
+  }
+}
+
 export async function saveToS3({
   bucket,
   key,

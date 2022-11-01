@@ -2,7 +2,7 @@
   "name": "mugstech-s3",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Uploads and Retrieves files to/from S3 in an AWS lambda",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
