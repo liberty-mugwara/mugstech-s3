@@ -16,7 +16,7 @@ export async function getS3Data<T>({
   bucket: string;
   key: string;
   region?: string;
-  parse?: true;
+  parse?: boolean;
 }) {
   try {
     // Create an Amazon S3 service client object.
