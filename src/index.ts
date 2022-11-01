@@ -21,7 +21,7 @@ export async function getS3Data<T>({
   try {
     // Create an Amazon S3 service client object.
     const s3Client = new S3Client({ region });
-    let data = "";
+    let data: Buffer = Buffer.from("");
 
     const { Body } = await s3Client.send(
       new GetObjectCommand({
@@ -33,11 +33,11 @@ export async function getS3Data<T>({
     await pipeline<NodeJS.ReadableStream, NodeJS.WritableStream>(
       Body as NodeJS.ReadableStream,
       concat((d) => {
-        data = d.toString();
+        data = d;
       })
     );
 
-    if (parse) return JSON.parse(data) as T;
+    if (parse) return JSON.parse(data.toString()) as T;
     else return data;
   } catch (err) {
     throw err;
