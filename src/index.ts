@@ -4,8 +4,9 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 
+import { Upload } from "@aws-sdk/lib-storage";
 import concat from "concat-stream";
-import { pipeline } from "stream/promises";
+import { finished } from "stream/promises";
 
 export async function getS3Data<T>({
   bucket,
@@ -19,23 +20,7 @@ export async function getS3Data<T>({
   parse?: boolean;
 }) {
   try {
-    // Create an Amazon S3 service client object.
-    const s3Client = new S3Client({ region });
-    let data: Buffer = Buffer.from("");
-
-    const { Body } = await s3Client.send(
-      new GetObjectCommand({
-        Bucket: bucket,
-        Key: key,
-      })
-    );
-
-    await pipeline<NodeJS.ReadableStream, NodeJS.WritableStream>(
-      Body as NodeJS.ReadableStream,
-      concat((d) => {
-        data = d;
-      })
-    );
+    const data: Buffer = await getS3Buffer({ bucket, key, region });
 
     if (parse) return JSON.parse(data.toString()) as T;
     else return data;
@@ -62,7 +47,7 @@ export async function getS3JSONObject<T>({
   }
 }
 
-export async function getS3Buffer({
+export async function getS3Stream({
   bucket,
   key,
   region = "eu-central-1",
@@ -74,7 +59,6 @@ export async function getS3Buffer({
   try {
     // Create an Amazon S3 service client object.
     const s3Client = new S3Client({ region });
-    let data: Buffer = Buffer.from("");
 
     const { Body } = await s3Client.send(
       new GetObjectCommand({
@@ -83,12 +67,30 @@ export async function getS3Buffer({
       })
     );
 
-    await pipeline<NodeJS.ReadableStream, NodeJS.WritableStream>(
-      Body as NodeJS.ReadableStream,
-      concat((d) => {
-        data = d;
-      })
-    );
+    return Body as NodeJS.ReadableStream;
+  } catch (err) {
+    throw err;
+  }
+}
+
+export async function getS3Buffer({
+  bucket,
+  key,
+  region = "eu-central-1",
+}: {
+  bucket: string;
+  key: string;
+  region?: string;
+}) {
+  try {
+    let data: Buffer = Buffer.from("");
+    const readStream = await getS3Stream({ bucket, key, region });
+    const concatStream = concat((d) => {
+      data = d;
+    });
+
+    readStream.pipe(concatStream);
+    await finished(concatStream);
 
     return data;
   } catch (err) {
@@ -121,5 +123,38 @@ export async function saveToS3({
     await s3Client.send(new PutObjectCommand(putObjParams));
   } catch (err) {
     throw err;
+  }
+}
+
+export async function uploadFileToS3({
+  bucket,
+  key,
+  readStream,
+  region = "eu-central-1",
+  progress = false,
+}: {
+  bucket: string;
+  key: string;
+  readStream: NodeJS.ReadableStream;
+  region?: string;
+  progress: Boolean;
+}) {
+  const target = { Bucket: bucket, Key: key, Body: readStream };
+  try {
+    const parallelUploads3 = new Upload({
+      client: new S3Client({ region }),
+      leavePartsOnError: false, // optional manually handle dropped parts
+      params: target,
+    });
+
+    if (progress) {
+      parallelUploads3.on("httpUploadProgress", (progress) => {
+        console.log(progress);
+      });
+    }
+
+    await parallelUploads3.done();
+  } catch (e) {
+    throw e;
   }
 }
