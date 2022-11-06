@@ -4,6 +4,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 
+import { PassThrough } from "stream";
 import { Upload } from "@aws-sdk/lib-storage";
 import concat from "concat-stream";
 import { finished } from "stream/promises";
@@ -126,20 +127,19 @@ export async function saveToS3({
   }
 }
 
-export async function uploadFileToS3({
+export function uploadFileToS3({
   bucket,
   key,
-  readStream,
   region = "eu-central-1",
   progress = false,
 }: {
   bucket: string;
   key: string;
-  readStream: NodeJS.ReadableStream;
   region?: string;
   progress: Boolean;
 }) {
-  const target = { Bucket: bucket, Key: key, Body: readStream };
+  const pass = new PassThrough();
+  const target = { Bucket: bucket, Key: key, Body: pass };
   try {
     const parallelUploads3 = new Upload({
       client: new S3Client({ region }),
@@ -152,8 +152,7 @@ export async function uploadFileToS3({
         console.log(progress);
       });
     }
-
-    await parallelUploads3.done();
+    return pass;
   } catch (e) {
     throw e;
   }
