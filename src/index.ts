@@ -167,7 +167,7 @@ export async function uploadFileToS3({
 
 // Handle uploading file to Amazon S3.
 // Uses the multipart file upload API.
-async function uploadS3({
+export async function uploadS3({
   bucket,
   key,
   readableStream,
