@@ -127,19 +127,22 @@ export async function saveToS3({
   }
 }
 
-export function uploadFileToS3({
+export async function uploadFileToS3({
   bucket,
   key,
+  readableStream,
   region = "eu-central-1",
-  progress = false,
 }: {
   bucket: string;
   key: string;
+  readableStream: NodeJS.ReadableStream;
   region?: string;
   progress: Boolean;
 }) {
-  const pass = new PassThrough();
-  const target = { Bucket: bucket, Key: key, Body: pass };
+  const passThroughStream = new PassThrough();
+  const target = { Bucket: bucket, Key: key, Body: passThroughStream };
+  let res;
+
   try {
     const parallelUploads3 = new Upload({
       client: new S3Client({ region }),
@@ -147,13 +150,11 @@ export function uploadFileToS3({
       params: target,
     });
 
-    if (progress) {
-      parallelUploads3.on("httpUploadProgress", (progress) => {
-        console.log(progress);
-      });
-    }
-    return pass;
+    readableStream.pipe(passThroughStream);
+    res = await parallelUploads3.done();
   } catch (e) {
     throw e;
   }
+
+  return res;
 }
