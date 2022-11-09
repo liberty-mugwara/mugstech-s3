@@ -19,11 +19,10 @@
   "author": "Liberty Mugwara",
   "license": "ISC",
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.188.0",
+    "@aws-sdk/client-s3": "^3.204.0",
     "@aws-sdk/lib-storage": "^3.204.0",
-    "aws-sdk": "^2.1248.0",
     "concat-stream": "^2.0.0",
-    "s3-upload-stream": "^1.0.7"
+    "tslib": "^2.4.1"
   },
   "devDependencies": {
     "@types/concat-stream": "^2.0.0",

@@ -4,16 +4,10 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 
-import AWS from "aws-sdk";
 import { PassThrough } from "stream";
 import { Upload } from "@aws-sdk/lib-storage";
 import concat from "concat-stream";
 import { finished } from "stream/promises";
-
-// Define s3-upload-stream with S3 credentials.
-const s3Stream = require("s3-upload-stream")(
-  new AWS.S3({ region: "eu-central-1" })
-);
 
 export async function getS3Data<T>({
   bucket,
@@ -163,44 +157,4 @@ export async function uploadFileToS3({
   }
 
   return res;
-}
-
-// Handle uploading file to Amazon S3.
-// Uses the multipart file upload API.
-export async function uploadS3({
-  bucket,
-  key,
-  readableStream,
-  region = "eu-central-1",
-}: {
-  bucket: string;
-  key: string;
-  readableStream: NodeJS.ReadableStream;
-  region?: string;
-  progress: Boolean;
-}) {
-  return new Promise((resolve, reject) => {
-    const upload = s3Stream.upload({
-      Bucket: bucket,
-      Key: key,
-    });
-
-    // Handle errors.
-    upload.on("error", function (err: Error) {
-      reject(err);
-    });
-
-    // // Handle progress.
-    // // upload.on('part', function (details) {
-    // //   console.log(inspect(details));
-    // // });
-
-    // Handle upload completion.
-    upload.on("uploaded", function (details: any) {
-      resolve(details);
-    });
-
-    // Pipe the Readable stream to the s3-upload-stream module.
-    readableStream.pipe(upload);
-  });
 }

@@ -16,6 +16,7 @@ pids
 *.seed
 *.pid.lock
 
+aws-layers
 # Directory for mugstech libraries
 lib
 
