@@ -7,21 +7,24 @@ import {
 import { PassThrough } from "stream";
 import { Upload } from "@aws-sdk/lib-storage";
 import concat from "concat-stream";
-import { finished } from "stream/promises";
+import { finished, pipeline } from "stream/promises";
+import { createGunzip } from "node:zlib";
 
 export async function getS3Data<T>({
   bucket,
   key,
   region = "eu-central-1",
   parse = true,
+  gziped = false,
 }: {
   bucket: string;
   key: string;
   region?: string;
   parse?: boolean;
+  gziped?: boolean;
 }) {
   try {
-    const data: Buffer = await getS3Buffer({ bucket, key, region });
+    const data: Buffer = await getS3Buffer({ bucket, key, region, gziped });
 
     if (parse) return JSON.parse(data.toString()) as T;
     else return data;
@@ -33,14 +36,16 @@ export async function getS3Data<T>({
 export async function getS3JSONObject<T>({
   bucket,
   key,
+  gziped = false,
   region = "eu-central-1",
 }: {
   bucket: string;
   key: string;
+  gziped?: boolean;
   region?: string;
 }) {
   try {
-    const data: Buffer = await getS3Buffer({ bucket, key, region });
+    const data: Buffer = await getS3Buffer({ bucket, key, region, gziped });
 
     return JSON.parse(data.toString()) as T;
   } catch (err) {
@@ -77,10 +82,12 @@ export async function getS3Stream({
 export async function getS3Buffer({
   bucket,
   key,
+  gziped = false,
   region = "eu-central-1",
 }: {
   bucket: string;
   key: string;
+  gziped?: boolean;
   region?: string;
 }) {
   try {
@@ -90,10 +97,15 @@ export async function getS3Buffer({
       data = d;
     });
 
-    readStream.pipe(concatStream);
-    await finished(concatStream);
-
-    return data;
+    if (!gziped) {
+      readStream.pipe(concatStream);
+      await finished(concatStream);
+      return data;
+    } else {
+      const gunzip = createGunzip();
+      await pipeline(readStream, gunzip, concatStream);
+      return data;
+    }
   } catch (err) {
     throw err;
   }
