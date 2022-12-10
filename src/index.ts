@@ -149,7 +149,7 @@ export async function uploadFileToS3({
   key: string;
   readableStream: NodeJS.ReadableStream;
   region?: string;
-  progress: Boolean;
+  progress?: Boolean;
 }) {
   const passThroughStream = new PassThrough();
   const target = { Bucket: bucket, Key: key, Body: passThroughStream };
