@@ -9,6 +9,7 @@ import { Upload } from "@aws-sdk/lib-storage";
 import concat from "concat-stream";
 import { finished, pipeline } from "stream/promises";
 import { createGunzip } from "node:zlib";
+import jsYaml from "js-yaml";
 
 export async function getS3Data<T>({
   bucket,
@@ -48,6 +49,26 @@ export async function getS3JSONObject<T>({
     const data: Buffer = await getS3Buffer({ bucket, key, region, gziped });
 
     return JSON.parse(data.toString()) as T;
+  } catch (err) {
+    throw err;
+  }
+}
+
+export async function getS3YMLObject<T>({
+  bucket,
+  key,
+  gziped = false,
+  region = "eu-central-1",
+}: {
+  bucket: string;
+  key: string;
+  gziped?: boolean;
+  region?: string;
+}) {
+  try {
+    const data: Buffer = await getS3Buffer({ bucket, key, region, gziped });
+
+    return jsYaml.load(data.toString()) as T;
   } catch (err) {
     throw err;
   }
@@ -123,10 +144,18 @@ export async function saveToS3({
   region?: string;
 }) {
   try {
+    let Body = "";
+    if (typeof body === "string") {
+      Body = body;
+    } else if (key.toLowerCase().endsWith(".json")) {
+      Body = JSON.stringify(body);
+    } else {
+      Body = jsYaml.dump(body);
+    }
     const putObjParams = {
       Bucket: bucket,
       Key: key,
-      Body: typeof body === "string" ? body : JSON.stringify(body),
+      Body,
     };
 
     // Create an Amazon S3 service client object.

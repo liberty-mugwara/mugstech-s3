@@ -1,5 +1,6 @@
 {
   "name": "mugstech-s3",
+  "description": "Add support for yaml files",
   "publish": true,
   "compatibleRuntimes": ["nodejs14.x", "nodejs16.x", "nodejs18.x"]
 }
